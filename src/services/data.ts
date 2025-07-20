@@ -111,9 +111,9 @@ export class DataService {
     }
   }
 
-  getDataStats(): { totalUsers: number; totalDataSize: string; lastUpdated?: string } {
+  async getDataStats(): Promise<{ totalUsers: number; totalDataSize: string; lastUpdated?: string }> {
     try {
-      const users = this.listUsers();
+      const users = await this.listUsers();
       const files = fs.readdirSync(this.dataDir);
       let totalSize = 0;
       let lastUpdated: string | undefined;

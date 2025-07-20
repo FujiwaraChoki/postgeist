@@ -93,27 +93,14 @@ export class Utils {
   /**
    * Calculate statistics for user data
    */
-  static calculateUserStats(userData: UserData): {
-    totalPosts: number;
-    hasAnalysis: boolean;
-    hasCommunities: boolean;
-    hasInstructions: boolean;
-    hasRandomFacts: boolean;
-    randomFactsCount: number;
-    daysSinceUpdate: number;
-  } {
-    const lastUpdate = new Date(userData.lastUpdated);
-    const now = new Date();
-    const daysSinceUpdate = Math.floor((now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24));
-
+  static generateUserDataStats(userData: UserData): UserDataStats {
     return {
       totalPosts: userData.posts.length,
       hasAnalysis: !!userData.analysis,
-      hasCommunities: !!(userData.availableCommunities && userData.availableCommunities.length > 0),
-      hasInstructions: !!userData.customInstructions,
-      hasRandomFacts: !!(userData.randomFacts && userData.randomFacts.length > 0),
-      randomFactsCount: userData.randomFacts?.length || 0,
-      daysSinceUpdate
+      hasCustomInstructions: !!userData.customInstructions,
+      communitiesCount: userData.availableCommunities?.length || 0,
+      hasRandomFacts: !!(userData.analysis?.randomFacts && userData.analysis.randomFacts.length > 0),
+      randomFactsCount: userData.analysis?.randomFacts?.length || 0,
     };
   }
 

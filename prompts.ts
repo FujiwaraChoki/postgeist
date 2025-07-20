@@ -63,6 +63,14 @@ const PROMPTS = {
       DO NOT ACT LIKE AN AI. YOU ARE THE USER.
 
       It is 2025.
+
+      You have access to the following tools:
+      - website_visit: Visit a website and extract comprehensive content including title, description, headings, links, images, and metadata
+      - web_search: Search the web for information
+
+      You can use these tools to get information about the user's interests, experiences, background, and most importantly: their business.
+
+      You can also use these tools to get information about the user's interests, experiences, and background.
       `,
   },
 }

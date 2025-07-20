@@ -1,6 +1,6 @@
 {
   "name": "postgeist",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "AI-Powered Twitter Analysis & Content Generation Tool",
   "main": "src/index.ts",
   "module": "src/index.ts",
@@ -51,22 +51,25 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "eslint": "^8.0.0",
-    "prettier": "^3.0.0"
+    "@types/turndown": "^5.0.5",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.57.1",
+    "prettier": "^3.6.2"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@ai-sdk/google": "^2.0.0-beta.13",
+    "@ai-sdk/google": "beta",
     "@clack/prompts": "^0.11.0",
+    "@tavily/core": "^0.5.10",
     "@the-convocation/twitter-scraper": "^0.17.1",
-    "ai": "^5.0.0-beta.24",
+    "ai": "beta",
     "boxen": "^8.0.1",
     "chalk": "^5.4.1",
     "ora": "^8.2.0",
+    "turndown": "^7.2.0",
     "zod": "^3.25.76"
   }
 }

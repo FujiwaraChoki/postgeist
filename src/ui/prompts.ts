@@ -72,7 +72,7 @@ export class PromptsUI {
         {
           value: "facts",
           label: "🎯 Random Facts",
-          hint: `${userData.randomFacts?.length || 0} facts configured`
+          hint: `${userData.analysis?.randomFacts?.length || 0} facts configured`
         },
         { value: "back", label: "⬅️  Back to Main Menu", hint: "Return to main menu" }
       ]
@@ -104,16 +104,74 @@ export class PromptsUI {
   }
 
   static async getCustomInstructions(currentInstructions?: string): Promise<string> {
-    return await clack.text({
-      message: "Enter your custom instructions:",
-      placeholder: "e.g., Always mention learning in public. Never use more than 1 emoji per post.",
-      defaultValue: currentInstructions || "",
-      validate: (value) => {
-        if (!value || value.trim().length === 0) return "Instructions cannot be empty";
-        if (value.length > 1000) return "Instructions too long (max 1000 characters)";
-        return;
+    const fs = await import('fs');
+    const path = await import('path');
+    const { execSync } = await import('child_process');
+    const os = await import('os');
+
+    // Create a temporary file for vim editing
+    const tempDir = os.tmpdir();
+    const tempFile = path.join(tempDir, `postgeist-instructions-${Date.now()}.txt`);
+
+    try {
+      // Write current instructions to temp file, or helpful template if none exist
+      const initialContent = currentInstructions || `# Custom Instructions for Post Generation
+#
+# Enter your custom instructions below. These will guide how AI generates posts for you.
+# Examples:
+# - Always mention learning in public
+# - Never use more than 1 emoji per post
+# - Focus on technical content
+# - Keep posts under 280 characters
+# - Always include a call to action
+# - Use a professional but friendly tone
+#
+# Lines starting with # are comments and will be ignored.
+# Delete this template and write your own instructions:
+
+`;
+
+      fs.writeFileSync(tempFile, initialContent);
+
+      console.log('\n📝 Opening vim to edit your custom instructions...');
+      console.log('💡 Save and quit with :wq when done, or :q! to cancel');
+
+      // Open vim with the temp file
+      execSync(`vim "${tempFile}"`, {
+        stdio: 'inherit',
+        encoding: 'utf8'
+      });
+
+      // Read the edited content
+      const editedContent = fs.readFileSync(tempFile, 'utf8');
+
+      // Clean up the content (remove comments and empty lines)
+      const cleanedContent = editedContent
+        .split('\n')
+        .filter(line => !line.trim().startsWith('#') && line.trim().length > 0)
+        .join('\n')
+        .trim();
+
+      if (!cleanedContent || cleanedContent.length === 0) {
+        throw new Error('Instructions cannot be empty. Please provide some guidance for post generation.');
       }
-    }) as string;
+
+      if (cleanedContent.length > 1000) {
+        throw new Error('Instructions too long (max 1000 characters). Please shorten your instructions.');
+      }
+
+      return cleanedContent;
+
+    } finally {
+      // Clean up temp file
+      try {
+        if (fs.existsSync(tempFile)) {
+          fs.unlinkSync(tempFile);
+        }
+      } catch (error) {
+        // Ignore cleanup errors
+      }
+    }
   }
 
   static async getCommunityName(existingNames: string[] = []): Promise<string> {
@@ -157,9 +215,15 @@ export class PromptsUI {
   }
 
   static async confirmAction(message: string): Promise<boolean> {
-    return await clack.confirm({
+    const result = await clack.confirm({
       message
     });
+
+    if (clack.isCancel(result)) {
+      return false;
+    }
+
+    return result;
   }
 
   static async selectDataAction(): Promise<string> {
@@ -216,9 +280,15 @@ export class PromptsUI {
   }
 
   static async shouldContinue(): Promise<boolean> {
-    return await clack.confirm({
+    const result = await clack.confirm({
       message: "Would you like to perform another action?"
     });
+
+    if (clack.isCancel(result)) {
+      return false;
+    }
+
+    return result;
   }
 
   static async selectFromList<T>(
@@ -238,7 +308,17 @@ export class PromptsUI {
       options
     }) as string;
 
-    return items[parseInt(selected)];
+    if (clack.isCancel(selected)) {
+      throw new Error('Selection cancelled');
+    }
+
+    const index = parseInt(selected);
+    const item = items[index];
+    if (!item) {
+      throw new Error('Invalid selection');
+    }
+
+    return item;
   }
 
   // Spinner helpers for consistent loading states
@@ -271,59 +351,10 @@ export class PromptsUI {
     return await clack.select({
       message: "Random Facts Management",
       options: [
-        {
-          value: "view",
-          label: "👀 View Facts",
-          hint: facts.length > 0 ? `${facts.length} facts` : "No facts yet"
-        },
-        {
-          value: "add",
-          label: "➕ Add Fact",
-          hint: "Add a new random fact"
-        },
-        {
-          value: "remove",
-          label: "➖ Remove Fact",
-          hint: facts.length > 0 ? "Remove an existing fact" : "No facts to remove"
-        },
-        {
-          value: "clear",
-          label: "🗑️  Clear All Facts",
-          hint: facts.length > 0 ? "Remove all facts" : "No facts to clear"
-        },
-        { value: "back", label: "⬅️  Back", hint: "Return to settings" }
+        { value: "view", label: "👀 View Random Facts", hint: `${facts.length} facts available` },
+        { value: "regenerate", label: "🔄 Regenerate Facts", hint: "Re-analyze to generate new facts" },
+        { value: "back", label: "⬅️  Back to Settings", hint: "Return to settings menu" }
       ]
     }) as FactsActionType;
-  }
-
-  static async getRandomFact(existingFacts: string[]): Promise<string> {
-    const fact = await clack.text({
-      message: "Enter a random fact about the user:",
-      placeholder: "e.g., Lives in Tokyo, loves coffee, has 3 cats...",
-      validate: (value) => {
-        if (!value || value.trim().length === 0) return "Fact cannot be empty";
-        if (value.trim().length < 5) return "Fact is too short (minimum 5 characters)";
-        if (value.trim().length > 500) return "Fact is too long (maximum 500 characters)";
-        if (existingFacts.includes(value.trim())) return "This fact already exists";
-        return;
-      }
-    }) as string;
-
-    return fact.trim();
-  }
-
-  static async selectFactToRemove(facts: string[]): Promise<number> {
-    const options = facts.map((fact, index) => ({
-      value: index.toString(),
-      label: `${index + 1}. ${fact.length > 60 ? fact.substring(0, 60) + '...' : fact}`,
-      hint: fact.length > 60 ? fact : undefined
-    }));
-
-    const selected = await clack.select({
-      message: "Select a fact to remove:",
-      options
-    }) as string;
-
-    return parseInt(selected);
   }
 }

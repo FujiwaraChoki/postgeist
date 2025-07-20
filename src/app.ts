@@ -221,7 +221,7 @@ export class PostgeistApp {
 
       switch (action) {
         case "stats":
-          const stats = dataService.getDataStats();
+          const stats = await dataService.getDataStats();
           DisplayUI.showDataStats(stats);
           break;
 
@@ -367,8 +367,13 @@ export class PostgeistApp {
   }
 
   private async handleRandomFacts(userData: UserData): Promise<void> {
+    if (!userData.analysis?.randomFacts) {
+      DisplayUI.showInfo("No random facts available. Please analyze the user first to generate facts.");
+      return;
+    }
+
     while (true) {
-      const facts = userData.randomFacts || [];
+      const facts = userData.analysis.randomFacts;
       const action = await PromptsUI.selectFactsAction(facts);
 
       if (action === "back") break;
@@ -378,62 +383,20 @@ export class PostgeistApp {
           if (facts.length > 0) {
             DisplayUI.showRandomFacts(facts);
           } else {
-            DisplayUI.showInfo("No random facts are currently configured.");
+            DisplayUI.showInfo("No random facts are currently available.");
           }
           break;
 
-        case "add":
-          const existingFacts = facts;
-          const fact = await PromptsUI.getRandomFact(existingFacts);
-
-          if (!userData.randomFacts) {
-            userData.randomFacts = [];
-          }
-          userData.randomFacts.push(fact);
-
-          await dataService.saveUserData(userData);
-          DisplayUI.showSuccess(`Random fact added!`);
-
-          // Show encouragement if approaching the minimum of 50
-          if (userData.randomFacts.length < 50) {
-            const remaining = 50 - userData.randomFacts.length;
-            DisplayUI.showInfo(`💡 Tip: Add ${remaining} more facts to reach the recommended minimum of 50 for better AI personalization.`);
-          }
-          break;
-
-        case "remove":
-          if (facts.length > 0) {
-            const index = await PromptsUI.selectFactToRemove(facts);
-            const selectedFact = facts[index];
-
-            if (selectedFact) {
-              const confirm = await PromptsUI.confirmAction(
-                `Are you sure you want to remove this fact: "${selectedFact.length > 60 ? selectedFact.substring(0, 60) + '...' : selectedFact}"?`
-              );
-
-              if (confirm) {
-                userData.randomFacts!.splice(index, 1);
-                await dataService.saveUserData(userData);
-                DisplayUI.showSuccess(`Random fact removed!`);
-              }
-            }
-          } else {
-            DisplayUI.showInfo("No facts to remove.");
-          }
-          break;
-
-        case "clear":
-          if (facts.length > 0) {
-            const confirm = await PromptsUI.confirmAction(
-              `Are you sure you want to clear all ${facts.length} random facts?`
-            );
-            if (confirm) {
-              userData.randomFacts = [];
-              await dataService.saveUserData(userData);
-              DisplayUI.showSuccess("All random facts cleared!");
-            }
-          } else {
-            DisplayUI.showInfo("No facts to clear.");
+        case "regenerate":
+          const confirm = await PromptsUI.confirmAction(
+            "Re-analyzing the user will regenerate all facts. Continue?"
+          );
+          if (confirm) {
+            // Trigger re-analysis to regenerate facts
+            userData.analysis = undefined;
+            await dataService.saveUserData(userData);
+            DisplayUI.showInfo("Analysis cleared. Please re-analyze the user to generate new facts.");
+            return;
           }
           break;
       }
@@ -697,11 +660,17 @@ export class PostgeistApp {
       fs.mkdirSync(config.app.dataDir, { recursive: true });
     }
 
-    const content = postIdeas.map((idea, index) =>
-      `${index + 1}. ${idea.text}\n${idea.community ? `   Community: ${idea.community}\n` : ''}${idea.reasoning ? `   Reasoning: ${idea.reasoning}\n` : ''}\n`
-    ).join('\n');
+    const content = postIdeas.map((idea, index) => {
+      const separator = "============================================================";
+      return `${separator}\nPOST ${index + 1}\n${separator}\n` +
+        `Text: ${idea.text}\n` +
+        `Characters: ${idea.text.length}/280\n` +
+        `Community: ${idea.community || 'General'}\n` +
+        (idea.reasoning ? `Reasoning: ${idea.reasoning}\n` : '') +
+        `\n`;
+    }).join('\n');
 
     await Bun.write(filePath, content);
-    DisplayUI.showSuccess(`📁 Post ideas exported to: ${filePath}`);
+    DisplayUI.showSuccess(`Post ideas exported to: ${filePath}`);
   }
 }

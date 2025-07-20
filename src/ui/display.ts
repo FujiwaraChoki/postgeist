@@ -320,8 +320,8 @@ export class DisplayUI {
       ? chalk.green(`✓ ${userData.availableCommunities.length} communities available`)
       : chalk.gray("✗ No communities set");
 
-    const randomFactsInfo = userData.randomFacts && userData.randomFacts.length > 0
-      ? chalk.green(`✓ ${userData.randomFacts.length} random facts configured`)
+    const randomFactsInfo = userData.analysis?.randomFacts && userData.analysis.randomFacts.length > 0
+      ? chalk.green(`✓ ${userData.analysis.randomFacts.length} random facts configured`)
       : chalk.gray("✗ No random facts set");
 
     const analysisInfo = userData.analysis
@@ -356,8 +356,8 @@ export class DisplayUI {
     }
 
     // Show random facts if they exist
-    if (userData.randomFacts && userData.randomFacts.length > 0) {
-      this.showRandomFacts(userData.randomFacts);
+    if (userData.analysis?.randomFacts && userData.analysis.randomFacts.length > 0) {
+      this.showRandomFacts(userData.analysis.randomFacts);
     }
   }
 
@@ -473,6 +473,15 @@ export class DisplayUI {
         borderColor: "blue"
       }
     ));
+  }
+
+  // Simple tool messages without big boxes
+  static showToolMessage(message: string): void {
+    console.log(chalk.blue("ℹ️ ") + chalk.gray(message));
+  }
+
+  static showToolSuccess(message: string): void {
+    console.log(chalk.green("✅ ") + chalk.gray(message));
   }
 
   static showSetupHelp(): void {
