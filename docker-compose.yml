@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  postgeist:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: postgeist
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-WARN}
+      - DATA_DIR=/root/.postgeist
+      - MAX_POSTS_TO_ANALYZE=${MAX_POSTS_TO_ANALYZE:-400}
+      - TWITTER_USERNAME=${TWITTER_USERNAME}
+      - TWITTER_PASSWORD=${TWITTER_PASSWORD}
+      - TWITTER_EMAIL=${TWITTER_EMAIL}
+    volumes:
+      - postgeist-data:/root/.postgeist
+      - ./logs:/app/logs
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    networks:
+      - postgeist-network
+
+  # Development service
+  postgeist-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    container_name: postgeist-dev
+    environment:
+      - NODE_ENV=development
+      - LOG_LEVEL=DEBUG
+      - DATA_DIR=/root/.postgeist
+      - TWITTER_USERNAME=${TWITTER_USERNAME}
+      - TWITTER_PASSWORD=${TWITTER_PASSWORD}
+      - TWITTER_EMAIL=${TWITTER_EMAIL}
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - postgeist-data:/root/.postgeist
+      - ./logs:/app/logs
+    stdin_open: true
+    tty: true
+    networks:
+      - postgeist-network
+    profiles:
+      - dev
+
+networks:
+  postgeist-network:
+    driver: bridge
+
+volumes:
+  postgeist-data:
+    driver: local
+  postgeist-logs:
+    driver: local

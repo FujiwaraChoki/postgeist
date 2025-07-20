@@ -1,0 +1,71 @@
+# dependencies (bun install)
+node_modules
+
+# output
+out
+dist
+*.tgz
+
+# code coverage
+coverage
+*.lcov
+
+# logs
+logs
+_.log
+report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
+
+# dotenv environment variable files
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
+# Allow example env file
+!env.example
+!.env.example
+
+# caches
+.eslintcache
+.cache
+*.tsbuildinfo
+
+# IntelliJ based IDEs
+.idea
+
+# Finder (MacOS) folder config
+.DS_Store
+
+# Build outputs
+dist/*
+!dist/.gitkeep
+build/
+
+# Local data directory (but allow structure)
+data/*.json
+data/*.csv
+data/*.txt
+!data/.gitkeep
+
+# Logs
+logs/
+*.log
+
+# Docker volumes
+docker-data/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+
+# Temporary files
+tmp/
+temp/
