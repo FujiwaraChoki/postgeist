@@ -32,13 +32,13 @@ Postgeist analyzes Twitter profiles using AI to understand posting patterns, eng
 
 **One-liner installation (macOS/Linux):**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/your-username/postgeist/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/FujiwaraChoki/postgeist/main/scripts/install.sh | bash
 ```
 
 **Manual installation:**
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/postgeist.git
+git clone https://github.com/FujiwaraChoki/postgeist.git
 cd postgeist
 
 # Install dependencies
@@ -70,7 +70,7 @@ postgeist --help
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/your-username/postgeist.git
+git clone https://github.com/FujiwaraChoki/postgeist.git
 cd postgeist
 ```
 
@@ -355,7 +355,7 @@ sudo rm /usr/local/bin/postgeist
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/postgeist.git
+git clone https://github.com/FujiwaraChoki/postgeist.git
 cd postgeist
 
 # Install dependencies
@@ -397,7 +397,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 If you encounter any issues or have questions:
 
-1. Check the [Issues](https://github.com/your-username/postgeist/issues) page
+1. Check the [Issues](https://github.com/FujiwaraChoki/postgeist/issues) page
 2. Create a new issue with detailed information
 3. Include error messages, environment details, and steps to reproduce
 
@@ -415,8 +415,8 @@ If you encounter any issues or have questions:
 
 <div align="center">
 
-**[⭐ Star this repo](https://github.com/your-username/postgeist)** if you find it useful!
+**[⭐ Star this repo](https://github.com/FujiwaraChoki/postgeist)** if you find it useful!
 
-Made with ❤️ by [Your Name](https://github.com/your-username)
+Made with ❤️ by [Your Name](https://github.com/FujiwaraChoki)
 
 </div>
