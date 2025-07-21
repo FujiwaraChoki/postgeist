@@ -6,7 +6,7 @@ Postgeist analyzes Twitter users' posting patterns, writing style, and content t
 
 ## Sponsor
 
-[![Sponsor](https://www.shiori.ai/?ref=github-profile-image)](https://www.shiori.ai/?ref=github-postgeist)
+[![Sponsor](repo/shiori.jpg)](https://www.shiori.ai/?ref=github-postgeist)
 
 This repo is sponsored by [shiori.ai](https://www.shiori.ai/?ref=github-postgeist), the **best ChatGPT Alternative**, with:
 
