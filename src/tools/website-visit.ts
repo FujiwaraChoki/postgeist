@@ -1,6 +1,7 @@
 import { tool } from "ai";
 import { z } from "zod";
 import TurndownService from "turndown";
+import ora from "ora";
 
 interface WebsiteData {
   title: string;
@@ -32,6 +33,11 @@ export const websiteVisit = tool({
     timeout: z.number().optional().default(10000),
   }),
   execute: async ({ url, maxContentLength = 1000, timeout = 10000 }): Promise<WebsiteData> => {
+    const spinner = ora({
+      text: `Visiting ${url}...`,
+      color: 'cyan'
+    }).start();
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
 
@@ -108,8 +114,10 @@ export const websiteVisit = tool({
       const metadata = extractMetadata(html);
 
       // Convert HTML to clean markdown content
+      spinner.text = 'Extracting and processing content...';
       const markdownContent = extractContentAsMarkdown(html, maxContentLength);
 
+      spinner.succeed(`Successfully extracted content from ${url}`);
       return {
         title,
         description,
@@ -133,6 +141,8 @@ export const websiteVisit = tool({
           errorMessage = error.message;
         }
       }
+
+      spinner.fail(`Failed to visit ${url}: ${errorMessage}`);
 
       return {
         title: '',
@@ -185,6 +195,7 @@ function extractContentAsMarkdown(html: string, maxLength: number): string {
     }
 
     // Convert to markdown using turndown
+    const turndownService = new TurndownService();
     let markdown = turndownService.turndown(cleanHtml);
 
     // Clean up the markdown

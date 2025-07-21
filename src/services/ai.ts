@@ -1,4 +1,4 @@
-import { generateText, Output } from "ai";
+import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
 import { z } from "zod";
 import type { Analysis, PostIdea, UserData, TwitterPost } from "../types";
@@ -9,6 +9,7 @@ import prompts from "../../prompts";
 import { websiteVisit } from "../tools/website-visit";
 import { webSearch } from "../tools/web-search";
 import { DisplayUI } from "../ui/display";
+import ora from "ora";
 
 const logger = createLogger("AIService");
 
@@ -41,17 +42,6 @@ export class AIService {
       const analysis = await generateText({
         system: prompts.analyze,
         model: this.model,
-        experimental_output: Output.object({
-          schema: z.object({
-            summary: z.string().describe("A concise summary of the user's activity"),
-            key_themes: z.array(z.string()).describe("Key themes and topics the user is interested in"),
-            engagement_patterns: z.array(z.string()).describe("Patterns of engagement the user has"),
-            unique_behaviors: z.array(z.string()).describe("Unique behaviors the user exhibits"),
-            opportunities: z.array(z.string()).describe("Opportunities for growth or improvement"),
-            tone: z.string().describe("An incredibly detailed analysis of the user's tone and style of posting"),
-            randomFacts: z.array(z.string()).describe("15-25 random facts about the user inferred from their posts and behavior"),
-          }),
-        }),
         prompt: `
           Analyze the following posts for @${username} and generate comprehensive insights including random facts about the user.
 
@@ -74,12 +64,25 @@ export class AIService {
           - Useful for generating authentic posts later
           - Written in a neutral, factual tone
           - 3-20 words long
+
+          Return the response as a valid JSON object with the following structure:
+          {
+            "summary": "A concise summary of the user's activity",
+            "key_themes": ["Key themes and topics the user is interested in"],
+            "engagement_patterns": ["Patterns of engagement the user has"],
+            "unique_behaviors": ["Unique behaviors the user exhibits"],
+            "opportunities": ["Opportunities for growth or improvement"],
+            "tone": "An incredibly detailed analysis of the user's tone and style of posting",
+            "randomFacts": ["15-25 random facts about the user inferred from their posts and behavior"]
+          }
         `
       });
 
       logger.info(`Analysis completed for @${username}`);
 
-      return analysis.experimental_output;
+      // Parse the JSON response
+      const parsed = this.parseAnalysisJson(analysis.text);
+      return parsed as Analysis;
     } catch (error) {
       logger.error(`Analysis failed for @${username}`, error as Error);
 
@@ -144,6 +147,10 @@ export class AIService {
         },
         prompt: `You are an expert social media content creator. Generate ${count} authentic Twitter posts that match the user's exact style and voice.
 
+${customInstructionsSection}
+
+⚠️ CRITICAL: The custom instructions above are the HIGHEST PRIORITY. They must be followed EXACTLY and take precedence over all other guidance below. If there is any conflict between custom instructions and other requirements, ALWAYS follow the custom instructions.
+
 USER ANALYSIS:
 Summary: ${userData.analysis.summary}
 Key Themes: ${userData.analysis.key_themes.join(", ")}
@@ -155,10 +162,9 @@ EXAMPLE POSTS FROM USER:
 ${postsForPrompt}
 
 ${randomFactsSection}
-${customInstructionsSection}
 ${communitiesSection}
 
-REQUIREMENTS:
+REQUIREMENTS (Secondary to custom instructions):
 - Match the user's exact writing style, tone, and voice
 - Use similar emoji patterns and formatting
 - Make posts 20-280 characters long
@@ -350,6 +356,49 @@ Generate exactly ${count} posts. Start with [ and end with ]. No markdown, no ex
     }
   }
 
+
+  private parseAnalysisJson(responseText: string): Analysis {
+    try {
+      // Clean up the response text
+      let jsonString = responseText.trim();
+
+      logger.info(`AI Analysis Response length: ${responseText.length} characters`);
+      logger.info(`First 200 chars: ${responseText.slice(0, 200)}`);
+
+      // Remove markdown code blocks if present
+      jsonString = jsonString.replace(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/g, '$1');
+
+      // Look for JSON object in the response
+      const jsonMatch = jsonString.match(/\{[\s\S]*?\}$/);
+      if (jsonMatch) {
+        jsonString = jsonMatch[0];
+      } else {
+        logger.warn('No JSON object found in response, trying full text');
+        // Try to find the start of a JSON object
+        const startIndex = jsonString.indexOf('{');
+        const endIndex = jsonString.lastIndexOf('}');
+        if (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
+          jsonString = jsonString.slice(startIndex, endIndex + 1);
+        }
+      }
+
+      logger.info(`Extracted JSON: ${jsonString.slice(0, 300)}...`);
+
+      // Parse the JSON
+      const parsed = JSON.parse(jsonString);
+
+      // Validate required fields
+      if (!parsed.summary || !parsed.key_themes || !parsed.tone) {
+        throw new Error('Missing required analysis fields');
+      }
+
+      return parsed;
+    } catch (error) {
+      logger.error('Analysis JSON parsing failed', error as Error);
+      logger.info(`Raw response: ${responseText}`);
+      throw new Error(`Failed to parse analysis response: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
 
   async reanalyzeUser(username: string, posts: TwitterPost[]): Promise<Analysis> {
     // Clear existing analysis and generate fresh one

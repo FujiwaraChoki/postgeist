@@ -8,6 +8,8 @@
   "scripts": {
     "start": "bun run src/index.ts",
     "dev": "bun run --watch src/index.ts",
+    "agent": "bun run src/agent.ts",
+    "agent:dev": "bun run --watch src/agent.ts",
     "api": "bun run api.ts",
     "api:dev": "bun run --watch api.ts",
     "frontend": "cd frontend && bun dev",
@@ -67,11 +69,11 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@ai-sdk/google": "beta",
+    "@ai-sdk/google": "^0.0.52",
     "@clack/prompts": "^0.11.0",
     "@tavily/core": "^0.5.10",
     "@the-convocation/twitter-scraper": "^0.17.1",
-    "ai": "beta",
+    "ai": "^3.4.33",
     "boxen": "^8.0.1",
     "chalk": "^5.4.1",
     "ora": "^8.2.0",
