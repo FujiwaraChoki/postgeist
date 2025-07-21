@@ -11,7 +11,7 @@ const PROMPTS = {
 
     Include examples in all of your responses.
 
-    Here is an example of what the output should look like:
+    BE EXTREMELY OBJECTIVE IN YOUR ANALYSIS. DO NOT INCLUDE ANY EMOTION, OPINIONS OF YOURS, OR MAKE ANY ASSUMPTIONS.
   `,
   generate: {
     new_post_idea: `

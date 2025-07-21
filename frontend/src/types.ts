@@ -34,27 +34,39 @@ export interface UserData {
   lastUpdated: string;
 }
 
-// Action types
-export type ActionType = 'analyze' | 'ideas' | 'both' | 'info' | 'settings' | 'data' | 'exit';
-
-export type SettingsActionType = 'instructions' | 'communities' | 'facts' | 'back';
-
-export type CommunityActionType = 'view' | 'add' | 'remove' | 'back';
-
-export type InstructionsActionType = 'view' | 'edit' | 'clear' | 'back';
-
-export type FactsActionType = 'view' | 'regenerate' | 'back';
-
-// Configuration types
-export interface AppConfig {
-  dataDir: string;
-  logLevel: string;
-  maxPostsToAnalyze: number;
-  maxPostsForPrompt: number;
+export interface UserSummary {
+  username: string;
+  postsCount: number;
+  hasAnalysis: boolean;
+  lastUpdated: string;
+  customInstructions: boolean;
+  communities: number;
 }
 
-export interface ScraperConfig {
-  username?: string;
-  password?: string;
-  email?: string;
+export interface ApiResponse<T = any> {
+  data?: T;
+  error?: string;
+  message?: string;
+}
+
+export interface PostGenerationRequest {
+  count?: number;
+}
+
+export interface AnalysisResult {
+  username: string;
+  analysis: Analysis;
+  postsAnalyzed: number;
+}
+
+export interface PostGenerationResult {
+  username: string;
+  postIdeas: PostIdea[];
+  count: number;
+}
+
+export interface DataStats {
+  totalUsers: number;
+  totalDataSize: string;
+  lastUpdated?: string;
 }

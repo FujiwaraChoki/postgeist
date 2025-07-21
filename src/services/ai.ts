@@ -136,8 +136,6 @@ export class AIService {
         ? `\n\nRANDOM FACTS ABOUT USER:\n${userData.analysis.randomFacts.map((fact, index) => `${index + 1}. ${fact}`).join('\n')}\n\nUse these facts strategically to add authentic personal touches to posts when they would naturally fit the user's posting style. Only reference facts that would realistically come up in their normal content.`
         : '';
 
-      DisplayUI.showToolMessage("Starting post generation with AI tools available...");
-
       const result = await generateText({
         model: this.model,
         tools: {

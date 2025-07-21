@@ -49,7 +49,7 @@ export class ScraperService {
       logger.info(`Fetching fresh posts for @${username}...`);
 
       // Fetch tweets
-      const tweets = this.scraper.getTweetsAndReplies(username);
+      const tweets = this.scraper.getTweets(username);
       const posts: TwitterPost[] = [];
 
       for await (const tweet of tweets) {

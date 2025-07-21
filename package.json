@@ -8,6 +8,11 @@
   "scripts": {
     "start": "bun run src/index.ts",
     "dev": "bun run --watch src/index.ts",
+    "api": "bun run api.ts",
+    "api:dev": "bun run --watch api.ts",
+    "frontend": "cd frontend && bun dev",
+    "frontend:build": "cd frontend && bun run build",
+    "dev:all": "concurrently \"bun run api:dev\" \"bun run frontend\"",
     "build": "bun build src/index.ts --outdir=dist --target=bun",
     "build:binary": "bun build src/index.ts --compile --outfile=dist/postgeist",
     "build:all": "npm run build:linux && npm run build:macos && npm run build:windows",
@@ -55,7 +60,8 @@
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "eslint": "^8.57.1",
-    "prettier": "^3.6.2"
+    "prettier": "^3.6.2",
+    "concurrently": "^9.2.0"
   },
   "peerDependencies": {
     "typescript": "^5.8.3"
