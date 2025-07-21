@@ -171,11 +171,91 @@ const routes = {
       const postIdeas = await aiService.generatePostIdeas(userData, count);
       return jsonResponse({
         username: params.username,
-        postIdeas,
+        ideas: postIdeas,
         count: postIdeas.length,
       });
     } catch (error) {
       return errorResponse(`Failed to generate posts: ${error}`);
+    }
+  },
+
+  // Prompt-based generation
+  "POST /api/generate/prompt": async (request: Request) => {
+    try {
+      const body = await request.json();
+      const { prompt, count = 5, username } = body;
+
+      if (!prompt || prompt.trim() === '') {
+        return errorResponse("Prompt is required", 400);
+      }
+
+      let userData: UserData | undefined;
+      if (username) {
+        try {
+          userData = await dataService.getUserData(username);
+          if (!userData.analysis) {
+            userData = undefined; // Generate without specific style if no analysis
+          }
+        } catch (error) {
+          // Username not found or no analysis, generate without specific style
+          userData = undefined;
+        }
+      }
+
+      const postIdeas = await aiService.generateFromPrompt(prompt.trim(), count, userData);
+      return jsonResponse({
+        prompt: prompt.trim(),
+        username: username || null,
+        ideas: postIdeas,
+        count: postIdeas.length,
+      });
+    } catch (error) {
+      return errorResponse(`Failed to generate posts from prompt: ${error}`);
+    }
+  },
+
+  // Tweak post ideas
+  "POST /api/tweak": async (request: Request) => {
+    try {
+      const body = await request.json();
+      const { originalText, feedback, username } = body;
+
+      if (!originalText || originalText.trim() === '') {
+        return errorResponse("Original text is required", 400);
+      }
+
+      if (!feedback || feedback.trim() === '') {
+        return errorResponse("Feedback is required", 400);
+      }
+
+      let userData: UserData | undefined;
+      if (username) {
+        try {
+          userData = await dataService.getUserData(username);
+          if (!userData.analysis) {
+            userData = undefined; // Tweak without specific style if no analysis
+          }
+        } catch (error) {
+          // Username not found or no analysis, tweak without specific style
+          userData = undefined;
+        }
+      }
+
+      const originalIdea: PostIdea = {
+        text: originalText.trim(),
+        community: null,
+        reasoning: 'Original idea to be tweaked'
+      };
+
+      const variations = await aiService.tweakPostIdea(originalIdea, feedback.trim(), userData);
+      return jsonResponse({
+        originalText: originalText.trim(),
+        feedback: feedback.trim(),
+        username: username || null,
+        variations,
+      });
+    } catch (error) {
+      return errorResponse(`Failed to tweak post idea: ${error}`);
     }
   },
 

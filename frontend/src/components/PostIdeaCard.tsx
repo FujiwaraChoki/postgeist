@@ -1,4 +1,4 @@
-import { Copy, Hash, MessageCircle, Sparkles } from "lucide-react";
+import { Copy, Hash, MessageCircle, Sparkles, Settings } from "lucide-react";
 import type { PostIdea } from "../types";
 import { getCharacterCount } from "../lib/utils";
 
@@ -6,9 +6,10 @@ interface PostIdeaCardProps {
   idea: PostIdea;
   index: number;
   onCopy: () => void;
+  onTweak?: () => void;
 }
 
-export default function PostIdeaCard({ idea, index, onCopy }: PostIdeaCardProps) {
+export default function PostIdeaCard({ idea, index, onCopy, onTweak }: PostIdeaCardProps) {
   const { count, status } = getCharacterCount(idea.text);
 
   const getStatusColor = () => {
@@ -90,14 +91,28 @@ export default function PostIdeaCard({ idea, index, onCopy }: PostIdeaCardProps)
             )}
           </div>
 
-          {/* Enhanced copy button */}
-          <button
-            onClick={onCopy}
-            className="ml-6 group-hover:ml-4 p-3 text-gray-400 hover:text-white hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 rounded-xl transition-all duration-300 hover:shadow-lg transform hover:scale-110"
-            title="Copy to clipboard"
-          >
-            <Copy className="w-5 h-5" />
-          </button>
+          {/* Action buttons */}
+          <div className="ml-6 group-hover:ml-4 flex flex-col gap-2 transition-all duration-300">
+            {/* Tweak button */}
+            {onTweak && (
+              <button
+                onClick={onTweak}
+                className="p-3 text-gray-400 hover:text-white hover:bg-gradient-to-r hover:from-orange-500 hover:to-red-600 rounded-xl transition-all duration-300 hover:shadow-lg transform hover:scale-110"
+                title="Tweak this post with feedback"
+              >
+                <Settings className="w-5 h-5" />
+              </button>
+            )}
+
+            {/* Copy button */}
+            <button
+              onClick={onCopy}
+              className="p-3 text-gray-400 hover:text-white hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 rounded-xl transition-all duration-300 hover:shadow-lg transform hover:scale-110"
+              title="Copy to clipboard"
+            >
+              <Copy className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Decorative element */}

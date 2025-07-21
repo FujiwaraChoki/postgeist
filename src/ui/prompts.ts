@@ -17,6 +17,7 @@ export class PromptsUI {
         { value: "analyze", label: "🔍 Analyze a Twitter Profile", hint: "Get AI insights and patterns" },
         { value: "ideas", label: "💡 Generate Post Ideas", hint: "From existing analysis" },
         { value: "both", label: "🚀 Analyze & Generate", hint: "Complete workflow" },
+        { value: "prompt", label: "✨ Generate from Prompt", hint: "Create posts from topic/idea" },
         { value: "info", label: "👤 View User Info", hint: "Show user data overview" },
         { value: "settings", label: "⚙️  Manage Settings", hint: "Custom instructions & communities" },
         { value: "data", label: "📊 Data Management", hint: "Export, import, and manage data" },
@@ -71,7 +72,7 @@ export class PromptsUI {
         },
         {
           value: "facts",
-                      label: "📊 Analysis Details",
+          label: "📊 Analysis Details",
           hint: `Analysis ${userData.analysis ? 'available' : 'not available'}`
         },
         { value: "back", label: "⬅️  Back to Main Menu", hint: "Return to main menu" }
@@ -344,6 +345,38 @@ export class PromptsUI {
   static validateLength(value: string, maxLength: number, fieldName: string): string | undefined {
     if (value.length > maxLength) return `${fieldName} too long (max ${maxLength} characters)`;
     return;
+  }
+
+  static async getPromptInput(): Promise<string> {
+    return await clack.text({
+      message: "Enter your topic or prompt:",
+      placeholder: "e.g., 'AI trends in 2025', 'productivity tips', 'startup advice'",
+      validate: (value) => {
+        if (!value || value.trim().length === 0) {
+          return "Please enter a topic or prompt";
+        }
+        if (value.trim().length < 3) {
+          return "Please enter at least 3 characters";
+        }
+        return undefined;
+      }
+    }) as string;
+  }
+
+  static async getFeedbackInput(): Promise<string> {
+    return await clack.text({
+      message: "Enter your feedback for improvement:",
+      placeholder: "e.g., 'make it more casual', 'add humor', 'focus on benefits'",
+      validate: (value) => {
+        if (!value || value.trim().length === 0) {
+          return "Please enter feedback";
+        }
+        if (value.trim().length < 3) {
+          return "Please enter at least 3 characters";
+        }
+        return undefined;
+      }
+    }) as string;
   }
 
   // Analysis Details Management

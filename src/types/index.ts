@@ -44,7 +44,7 @@ export interface UserData {
 }
 
 // Action types
-export type ActionType = 'analyze' | 'ideas' | 'both' | 'info' | 'settings' | 'data' | 'exit';
+export type ActionType = 'analyze' | 'ideas' | 'both' | 'prompt' | 'info' | 'settings' | 'data' | 'exit';
 
 export type SettingsActionType = 'instructions' | 'communities' | 'facts' | 'back';
 

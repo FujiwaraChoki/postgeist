@@ -41,6 +41,8 @@ export class PostgeistAgent {
 Your capabilities include:
 - Analyzing Twitter users' posting patterns, themes, and writing style
 - Generating authentic post ideas that match users' unique voices
+- Generating posts from custom prompts or topics (with optional style matching)
+- Tweaking existing post ideas based on feedback to create improved variations
 - Searching the web for current information
 - Visiting websites to extract content
 - Managing user data and providing insights
@@ -49,6 +51,7 @@ Guidelines:
 - Always be helpful, professional, and detailed in your responses
 - When analyzing users, provide comprehensive insights about their posting style
 - When generating posts, ensure they authentically match the user's voice
+- When tweaking posts, create meaningful improvements based on the feedback provided
 - Use web search and website visits when you need current information
 - Explain what you're doing step by step
 - If errors occur, provide clear explanations and suggestions
@@ -58,12 +61,14 @@ Guidelines:
 Current capabilities:
 - analyzeTwitterUser: Analyze posting patterns and style of any Twitter user
 - generatePostIdeas: Create authentic post ideas matching a user's style
+- generateFromPrompt: Generate posts from a topic/prompt, optionally matching a user's style
+- tweakPostIdea: Take an existing post and create 3 improved variations based on feedback
 - getUserInfo: Get information about previously analyzed users
 - listUsers: Show all analyzed users
 - web_search: Search the web for current information
 - website_visit: Extract content from websites
 
-Remember: You can analyze any public Twitter user and generate content that matches their authentic voice and style. All analysis data is automatically saved for future reference.`
+Remember: You can analyze any public Twitter user, generate content that matches their authentic voice and style, create posts from custom prompts, and improve existing ideas with feedback. All analysis data is automatically saved for future reference.`
     }];
   }
 
@@ -244,39 +249,180 @@ Remember: You can analyze any public Twitter user and generate content that matc
     }),
     execute: async ({ username }) => {
       const spinner = ora({
-        text: `Getting info for @${username}...`,
+        text: `Loading info for @${username}...`,
         color: 'cyan'
       }).start();
 
       try {
+        logger.info(`Getting user info for @${username}`);
+
         const userData = await dataService.getUserData(username);
 
-        spinner.succeed(`Retrieved info for @${username}`);
-
-        if (userData.posts.length === 0) {
-          spinner.fail(`No data found for @${username}`);
+        if (!userData.analysis) {
+          spinner.fail(`No analysis found for @${username}`);
           return {
             success: false,
-            error: `No data found for @${username}. User has not been analyzed yet.`
+            error: `No analysis found for @${username}. Please analyze the user first.`
           };
         }
 
+        spinner.succeed(`Retrieved info for @${username}`);
+
         return {
           success: true,
-          username,
-          lastUpdated: userData.lastUpdated,
+          username: userData.username,
           postsCount: userData.posts.length,
           hasAnalysis: !!userData.analysis,
-          customInstructions: userData.customInstructions || null,
-          communities: userData.availableCommunities || [],
-          summary: userData.analysis?.summary || "No analysis available"
+          hasCustomInstructions: !!userData.customInstructions,
+          communitiesCount: userData.availableCommunities?.length || 0,
+          lastUpdated: userData.lastUpdated,
+          analysis: {
+            summary: userData.analysis.summary,
+            keyThemes: userData.analysis.key_themes,
+            tone: userData.analysis.tone,
+            engagementPatterns: userData.analysis.engagement_patterns
+          }
         };
       } catch (error) {
         spinner.fail(`Failed to get info for @${username}`);
-        logger.error(`Failed to get user info for @${username}`, error as Error);
+        logger.error(`Get user info failed for @${username}`, error as Error);
         return {
           success: false,
-          error: `Failed to get info for @${username}: ${error instanceof Error ? error.message : 'Unknown error'}`
+          error: `Failed to get user info for @${username}: ${error instanceof Error ? error.message : 'Unknown error'}`
+        };
+      }
+    }
+  });
+
+  /**
+   * Tool for generating posts from a prompt/topic
+   */
+  private generateFromPrompt = tool({
+    description: "Generate post ideas from a specific topic or prompt, optionally matching a user's style",
+    parameters: z.object({
+      prompt: z.string().describe("The topic or prompt to generate posts about"),
+      count: z.number().optional().default(5).describe("Number of post ideas to generate (1-20)"),
+      username: z.string().optional().describe("Optional: Twitter username to match the style of")
+    }),
+    execute: async ({ prompt, count = 5, username }) => {
+      const spinner = ora({
+        text: `Generating ${count} posts from prompt: "${prompt}"...`,
+        color: 'green'
+      }).start();
+
+      try {
+        logger.info(`Generating ${count} posts from prompt: "${prompt}"`);
+
+        let userData: any = undefined;
+
+        if (username) {
+          spinner.text = `Loading style data for @${username}...`;
+          userData = await dataService.getUserData(username);
+
+          if (!userData.analysis) {
+            spinner.text = `No analysis found for @${username}, generating without specific style...`;
+            userData = undefined;
+          }
+        }
+
+        // Generate posts from prompt
+        spinner.text = `Generating ${count} posts from prompt with AI...`;
+        const postIdeas = await aiService.generateFromPrompt(prompt, Math.min(count, 20), userData);
+
+        spinner.succeed(`Generated ${postIdeas.length} posts from prompt`);
+
+        // Display the post ideas beautifully in the terminal
+        DisplayUI.showPostIdeas(postIdeas);
+
+        return {
+          success: true,
+          prompt,
+          count: postIdeas.length,
+          username: username || null,
+          postIdeas: postIdeas.map(idea => ({
+            text: idea.text,
+            community: idea.community,
+            reasoning: idea.reasoning,
+            characterCount: idea.text.length
+          }))
+        };
+      } catch (error) {
+        spinner.fail(`Prompt-based generation failed`);
+        logger.error(`Prompt-based generation failed`, error as Error);
+        return {
+          success: false,
+          error: `Failed to generate posts from prompt: ${error instanceof Error ? error.message : 'Unknown error'}`
+        };
+      }
+    }
+  });
+
+  /**
+   * Tool for tweaking a post idea with feedback
+   */
+  private tweakPostIdea = tool({
+    description: "Take an existing post idea and generate 3 improved variations based on specific feedback",
+    parameters: z.object({
+      originalText: z.string().describe("The original post text to tweak"),
+      feedback: z.string().describe("Feedback on how to improve the post"),
+      username: z.string().optional().describe("Optional: Twitter username to match the style of")
+    }),
+    execute: async ({ originalText, feedback, username }) => {
+      const spinner = ora({
+        text: `Creating 3 tweaked variations...`,
+        color: 'magenta'
+      }).start();
+
+      try {
+        logger.info(`Tweaking post idea with feedback: "${feedback}"`);
+
+        let userData: any = undefined;
+
+        if (username) {
+          spinner.text = `Loading style data for @${username}...`;
+          userData = await dataService.getUserData(username);
+
+          if (!userData.analysis) {
+            spinner.text = `No analysis found for @${username}, tweaking without specific style...`;
+            userData = undefined;
+          }
+        }
+
+        // Create PostIdea object from the original text
+        const originalIdea = {
+          text: originalText,
+          community: null,
+          reasoning: 'Original idea to be tweaked'
+        };
+
+        // Generate tweaked variations
+        spinner.text = `Generating 3 improved variations with AI...`;
+        const tweakedIdeas = await aiService.tweakPostIdea(originalIdea, feedback, userData);
+
+        spinner.succeed(`Generated 3 tweaked variations`);
+
+        // Display the tweaked variations beautifully in the terminal
+        DisplayUI.showPostIdeas(tweakedIdeas);
+
+        return {
+          success: true,
+          originalText,
+          feedback,
+          username: username || null,
+          variations: tweakedIdeas.map((idea, index) => ({
+            number: index + 1,
+            text: idea.text,
+            community: idea.community,
+            reasoning: idea.reasoning,
+            characterCount: idea.text.length
+          }))
+        };
+      } catch (error) {
+        spinner.fail(`Post tweaking failed`);
+        logger.error(`Post tweaking failed`, error as Error);
+        return {
+          success: false,
+          error: `Failed to tweak post idea: ${error instanceof Error ? error.message : 'Unknown error'}`
         };
       }
     }
@@ -360,6 +506,8 @@ Remember: You can analyze any public Twitter user and generate content that matc
         tools: {
           analyzeTwitterUser: this.analyzeTwitterUser,
           generatePostIdeas: this.generatePostIdeas,
+          generateFromPrompt: this.generateFromPrompt,
+          tweakPostIdea: this.tweakPostIdea,
           getUserInfo: this.getUserInfo,
           listUsers: this.listUsers,
           web_search: webSearch,
@@ -407,6 +555,8 @@ Remember: You can analyze any public Twitter user and generate content that matc
         tools: {
           analyzeTwitterUser: this.analyzeTwitterUser,
           generatePostIdeas: this.generatePostIdeas,
+          generateFromPrompt: this.generateFromPrompt,
+          tweakPostIdea: this.tweakPostIdea,
           getUserInfo: this.getUserInfo,
           listUsers: this.listUsers,
           web_search: webSearch,

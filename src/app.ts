@@ -104,6 +104,9 @@ export class PostgeistApp {
       case "both":
         await this.handleAnalyzeAndGenerate();
         break;
+      case "prompt":
+        await this.handleGenerateFromPrompt();
+        break;
       case "info":
         await this.handleUserInfo();
         break;
@@ -188,6 +191,38 @@ export class PostgeistApp {
 
     DisplayUI.showPostIdeas(postIdeas);
     await this.offerPostActions(postIdeas);
+  }
+
+  private async handleGenerateFromPrompt(): Promise<void> {
+    const prompt = await PromptsUI.getPromptInput();
+    const postCount = await PromptsUI.selectPostCount();
+
+    // Ask if they want to use an existing user's style
+    const useStyle = await clack.confirm({
+      message: "Do you want to match a specific Twitter user's style?",
+      initialValue: false
+    });
+
+    let userData: UserData | undefined;
+    if (useStyle) {
+      const username = await PromptsUI.getUsernameInput();
+      userData = await this.getUserData(username);
+
+      if (!userData.analysis) {
+        DisplayUI.showWarning(`No analysis found for @${username}. Generating without specific style.`);
+        userData = undefined;
+      }
+    }
+
+    const postIdeas = await Utils.withProgress(
+      aiService.generateFromPrompt(prompt, postCount, userData),
+      `✨ Generating ${postCount} posts from prompt...`,
+      "✅ Posts generated from prompt!",
+      "❌ Prompt-based generation failed"
+    );
+
+    DisplayUI.showPostIdeas(postIdeas);
+    await this.offerPostActions(postIdeas, userData);
   }
 
   private async handleUserInfo(): Promise<void> {
@@ -460,13 +495,14 @@ export class PostgeistApp {
     }
   }
 
-  private async offerPostActions(postIdeas: PostIdea[]): Promise<void> {
+  private async offerPostActions(postIdeas: PostIdea[], userData?: UserData): Promise<void> {
     const action = await clack.select({
       message: "What would you like to do with these post ideas?",
       options: [
         { value: "copy", label: "📋 Copy a specific post", hint: "Select and copy one post" },
         { value: "view_compact", label: "📖 Switch to compact view", hint: "See more posts at once" },
         { value: "view_detailed", label: "📑 Switch to detailed view", hint: "See full post details" },
+        { value: "tweak", label: "🔧 Tweak a post idea", hint: "Improve a specific post with feedback" },
         { value: "export", label: "📁 Export all posts", hint: "Save to file" },
         { value: "stats", label: "📊 View detailed statistics", hint: "Show comprehensive post stats" },
         { value: "continue", label: "➡️  Continue", hint: "Move on" }
@@ -497,12 +533,16 @@ export class PostgeistApp {
 
       case "view_compact":
         DisplayUI.showPostIdeasCompact(postIdeas);
-        await this.offerPostActions(postIdeas); // Recursive call for continued interaction
+        await this.offerPostActions(postIdeas, userData); // Recursive call for continued interaction
         break;
 
       case "view_detailed":
         DisplayUI.showPostIdeas(postIdeas);
-        await this.offerPostActions(postIdeas); // Recursive call for continued interaction
+        await this.offerPostActions(postIdeas, userData); // Recursive call for continued interaction
+        break;
+
+      case "tweak":
+        await this.handleTweakSinglePost(postIdeas, userData);
         break;
 
       case "export":
@@ -531,6 +571,101 @@ export class PostgeistApp {
 
       case "stats":
         await this.showDetailedPostStats(postIdeas);
+        break;
+    }
+  }
+
+  private async handleTweakSinglePost(postIdeas: PostIdea[], userData?: UserData): Promise<void> {
+    // Let user select which post to tweak
+    const selectedPost = await PromptsUI.selectFromList(
+      "Select a post to tweak:",
+      postIdeas,
+      (idea: PostIdea) => {
+        const index = postIdeas.indexOf(idea) + 1;
+        return `${index}. ${Utils.truncateText(idea.text, 60)}`;
+      },
+      (idea: PostIdea) => {
+        const charCount = idea.text.length;
+        const charInfo = charCount > 280 ? chalk.red(`${charCount}/280`) :
+          charCount > 240 ? chalk.yellow(`${charCount}/280`) :
+            chalk.green(`${charCount}/280`);
+        return idea.community ?
+          `${chalk.blue(idea.community)} • ${charInfo}` :
+          `${chalk.gray("General")} • ${charInfo}`;
+      }
+    );
+
+    // Get feedback from user
+    const feedback = await PromptsUI.getFeedbackInput();
+
+    // Generate 3 tweaked variations
+    const tweakedIdeas = await Utils.withProgress(
+      aiService.tweakPostIdea(selectedPost, feedback, userData),
+      `🔧 Creating 3 tweaked variations...`,
+      "✅ Tweaked variations generated!",
+      "❌ Tweaking failed"
+    );
+
+    // Show the tweaked variations
+    DisplayUI.showPostIdeas(tweakedIdeas);
+
+    // Ask if they want to replace the original or add to the list
+    const action = await clack.select({
+      message: "What would you like to do with these tweaked variations?",
+      options: [
+        { value: "replace", label: "🔄 Replace original", hint: "Replace the original post with selected variation" },
+        { value: "add", label: "➕ Add to list", hint: "Add variations to the existing list" },
+        { value: "copy", label: "📋 Copy a variation", hint: "Copy one of the variations" },
+        { value: "back", label: "⬅️  Back", hint: "Go back to post actions" }
+      ]
+    }) as string;
+
+    switch (action) {
+      case "replace":
+        // Let user pick which variation to replace with
+        const replacement = await PromptsUI.selectFromList(
+          "Select which variation to use as replacement:",
+          tweakedIdeas,
+          (idea: PostIdea) => {
+            const index = tweakedIdeas.indexOf(idea) + 1;
+            return `Variation ${index}. ${Utils.truncateText(idea.text, 60)}`;
+          }
+        );
+
+        // Replace the original post in the array
+        const originalIndex = postIdeas.indexOf(selectedPost);
+        postIdeas[originalIndex] = replacement;
+        DisplayUI.showSuccess("Original post replaced with tweaked variation!");
+
+        // Show updated list
+        DisplayUI.showPostIdeas(postIdeas);
+        await this.offerPostActions(postIdeas, userData);
+        break;
+
+      case "add":
+        // Add all variations to the list
+        postIdeas.push(...tweakedIdeas);
+        DisplayUI.showSuccess(`Added ${tweakedIdeas.length} tweaked variations to the list!`);
+
+        // Show updated list
+        DisplayUI.showPostIdeas(postIdeas);
+        await this.offerPostActions(postIdeas, userData);
+        break;
+
+      case "copy":
+        const selectedVariation = await PromptsUI.selectFromList(
+          "Select a variation to copy:",
+          tweakedIdeas,
+          (idea: PostIdea) => {
+            const index = tweakedIdeas.indexOf(idea) + 1;
+            return `Variation ${index}. ${Utils.truncateText(idea.text, 60)}`;
+          }
+        );
+        await Utils.copyToClipboard(selectedVariation.text);
+        break;
+
+      case "back":
+        await this.offerPostActions(postIdeas, userData);
         break;
     }
   }

@@ -60,6 +60,7 @@ export interface ApiResponse<T = any> {
 
 export interface PostGenerationRequest {
   count?: number;
+  customInstructions?: string;
 }
 
 export interface AnalysisResult {
@@ -70,8 +71,34 @@ export interface AnalysisResult {
 
 export interface PostGenerationResult {
   username: string;
-  postIdeas: PostIdea[];
   count: number;
+  ideas: PostIdea[];
+}
+
+export interface PromptGenerationRequest {
+  prompt: string;
+  count?: number;
+  username?: string;
+}
+
+export interface PromptGenerationResult {
+  prompt: string;
+  count: number;
+  ideas: PostIdea[];
+  username?: string;
+}
+
+export interface TweakRequest {
+  originalText: string;
+  feedback: string;
+  username?: string;
+}
+
+export interface TweakResult {
+  originalText: string;
+  feedback: string;
+  variations: PostIdea[];
+  username?: string;
 }
 
 export interface DataStats {

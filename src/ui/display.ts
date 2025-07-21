@@ -230,8 +230,8 @@ export class DisplayUI {
     const charCount = idea.text.length;
     const charColor = charCount > 280 ? 'red' : charCount > 240 ? 'yellow' : 'green';
 
-    // Simple post number
-    const postHeader = chalk.white.bold(`Post ${index}`);
+    // Simple post number with copy instruction
+    const postHeader = chalk.white.bold(`Post ${index}`) + chalk.gray(` (Copy: Ctrl+C on Post ${index})`);
 
     // Highlight mentions and hashtags in post text
     const formattedText = this.highlightPostText(idea.text);
@@ -239,7 +239,8 @@ export class DisplayUI {
     // Compact metadata line
     const communityBadge = idea.community ? chalk.blue(idea.community) : chalk.gray("General");
     const charDisplay = chalk[charColor](`${charCount} chars`);
-    const metadata = chalk.dim(`${communityBadge} • ${charDisplay}`);
+    const copyInstructions = chalk.cyan(`📋 Copy: Select Post ${index} in actions`);
+    const metadata = chalk.dim(`${communityBadge} • ${charDisplay} • ${copyInstructions}`);
 
     // Create X.com compose URL with pre-filled text
     const encodedText = encodeURIComponent(idea.text);

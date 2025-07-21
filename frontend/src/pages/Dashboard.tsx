@@ -12,25 +12,37 @@ import {
   Users,
   Activity,
   Sparkles,
-  ChevronRight
+  ChevronRight,
+  Lightbulb,
+  Send
 } from "lucide-react";
 import toast from "react-hot-toast";
 import apiService from "../lib/api";
-import type { UserSummary } from "../types";
+import type { UserSummary, PostIdea } from "../types";
 import { formatDate, sanitizeUsername, validateUsername, cn } from "../lib/utils";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
 import { Avatar, AvatarFallback } from "../components/ui/avatar";
+import { Textarea } from "../components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import AddUserModal from "../components/AddUserModal";
 import LoadingSpinner from "../components/LoadingSpinner";
+import PostIdeaCard from "../components/PostIdeaCard";
 
 export default function Dashboard() {
   const [users, setUsers] = useState<UserSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
+
+  // Prompt-based generation state
+  const [prompt, setPrompt] = useState("");
+  const [promptCount, setPromptCount] = useState(5);
+  const [promptUsername, setPromptUsername] = useState("");
+  const [promptLoading, setPromptLoading] = useState(false);
+  const [promptIdeas, setPromptIdeas] = useState<PostIdea[]>([]);
 
   useEffect(() => {
     loadUsers();
@@ -49,16 +61,48 @@ export default function Dashboard() {
   };
 
   const handleDeleteUser = async (username: string) => {
-    if (!confirm(`Are you sure you want to delete @${username}? This action cannot be undone.`)) {
+    if (!confirm(`Are you sure you want to delete @${username}? This will remove all analysis data.`)) {
       return;
     }
 
     try {
       await apiService.deleteUser(username);
-      toast.success(`User @${username} deleted successfully`);
-      loadUsers();
+      toast.success(`@${username} deleted successfully`);
+      await loadUsers();
     } catch (error) {
       toast.error(`Failed to delete user: ${error}`);
+    }
+  };
+
+  const handleGenerateFromPrompt = async () => {
+    if (!prompt.trim()) {
+      toast.error("Please enter a prompt or topic");
+      return;
+    }
+
+    try {
+      setPromptLoading(true);
+      const response = await apiService.generateFromPrompt({
+        prompt: prompt.trim(),
+        count: promptCount,
+        username: promptUsername || undefined
+      });
+
+      setPromptIdeas(response.ideas);
+      toast.success(`Generated ${response.ideas.length} post ideas!`);
+    } catch (error) {
+      toast.error(`Failed to generate posts: ${error}`);
+    } finally {
+      setPromptLoading(false);
+    }
+  };
+
+  const handleCopyPost = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Post copied to clipboard!");
+    } catch (error) {
+      toast.error("Failed to copy post");
     }
   };
 
@@ -136,6 +180,106 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Prompt-based Generation */}
+      <Card className="overflow-hidden border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-background">
+        <CardHeader className="bg-gradient-to-r from-primary/10 to-transparent">
+          <CardTitle className="flex items-center gap-2">
+            <Lightbulb className="h-5 w-5 text-primary" />
+            Generate from Prompt
+          </CardTitle>
+          <CardDescription>
+            Create posts from any topic or idea, optionally matching a specific user's style
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 pt-6">
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Topic or Prompt</label>
+              <Textarea
+                placeholder="e.g., 'AI trends in 2025', 'productivity tips', 'startup advice'..."
+                value={prompt}
+                onChange={e => setPrompt(e.target.value)}
+                className="resize-none"
+                rows={3}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Number of Posts</label>
+                <Select value={promptCount.toString()} onValueChange={value => setPromptCount(Number(value))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="3">3 posts</SelectItem>
+                    <SelectItem value="5">5 posts</SelectItem>
+                    <SelectItem value="10">10 posts</SelectItem>
+                    <SelectItem value="15">15 posts</SelectItem>
+                    <SelectItem value="20">20 posts</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Match User Style (Optional)</label>
+                <Select value={promptUsername} onValueChange={setPromptUsername}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a user style..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No specific style</SelectItem>
+                    {filteredUsers.map(user => (
+                      <SelectItem key={user.username} value={user.username}>
+                        @{user.username}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleGenerateFromPrompt}
+              disabled={promptLoading || !prompt.trim()}
+              className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary"
+              size="lg"
+            >
+              {promptLoading ? (
+                <>
+                  <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Generate Posts
+                </>
+              )}
+            </Button>
+          </div>
+
+          {promptIdeas.length > 0 && (
+            <div className="mt-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  Generated Ideas ({promptIdeas.length})
+                </h3>
+                <Button variant="outline" size="sm" onClick={() => setPromptIdeas([])}>
+                  Clear
+                </Button>
+              </div>
+              <div className="grid gap-4">
+                {promptIdeas.map((idea, index) => (
+                  <PostIdeaCard key={index} idea={idea} index={index + 1} onCopy={() => handleCopyPost(idea.text)} />
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Search */}
       <Card>

@@ -5,6 +5,10 @@ import type {
   AnalysisResult,
   PostGenerationResult,
   PostGenerationRequest,
+  PromptGenerationRequest,
+  PromptGenerationResult,
+  TweakRequest,
+  TweakResult,
   Community,
   DataStats
 } from '../types';
@@ -73,6 +77,18 @@ export const apiService = {
   // Post generation
   async generatePosts(username: string, request: PostGenerationRequest = {}): Promise<PostGenerationResult> {
     const response = await api.post(`/api/generate/${username}`, request);
+    return response.data;
+  },
+
+  // Prompt-based generation
+  async generateFromPrompt(request: PromptGenerationRequest): Promise<PromptGenerationResult> {
+    const response = await api.post('/api/generate/prompt', request);
+    return response.data;
+  },
+
+  // Tweak post ideas
+  async tweakPostIdea(request: TweakRequest): Promise<TweakResult> {
+    const response = await api.post('/api/tweak', request);
     return response.data;
   },
 

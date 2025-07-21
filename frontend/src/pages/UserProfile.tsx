@@ -1,38 +1,54 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
-  Brain,
+  User,
+  ArrowLeft,
+  Calendar,
+  Hash,
+  TrendingUp,
   MessageSquare,
   Settings,
-  RefreshCw,
-  Copy,
-  Download,
-  TrendingUp,
-  Users,
-  Target,
   Lightbulb,
-  Hash,
-  Clock,
-  BarChart3,
-  Calendar,
+  RefreshCw,
   Sparkles,
-  ArrowLeft
+  ExternalLink,
+  BarChart3,
+  Users,
+  MessageCircle,
+  Target,
+  TrendingDown,
+  X,
+  Send
 } from "lucide-react";
 import toast from "react-hot-toast";
 import apiService from "../lib/api";
 import type { UserData, PostIdea } from "../types";
-import { formatDate, copyToClipboard } from "../lib/utils";
+import { formatDate } from "../lib/utils";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
+import { Avatar, AvatarFallback } from "../components/ui/avatar";
+import { Progress } from "../components/ui/progress";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../components/ui/dialog";
+import { Textarea } from "../components/ui/textarea";
 import LoadingSpinner from "../components/LoadingSpinner";
 import PostIdeaCard from "../components/PostIdeaCard";
 
 export default function UserProfile() {
   const { username } = useParams<{ username: string }>();
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [postIdeas, setPostIdeas] = useState<PostIdea[]>([]);
   const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [postCount, setPostCount] = useState(10);
+  const [postIdeas, setPostIdeas] = useState<PostIdea[]>([]);
+
+  // Tweak functionality state
+  const [tweakModalOpen, setTweakModalOpen] = useState(false);
+  const [tweakingPost, setTweakingPost] = useState<PostIdea | null>(null);
+  const [tweakFeedback, setTweakFeedback] = useState("");
+  const [tweaking, setTweaking] = useState(false);
+  const [tweakVariations, setTweakVariations] = useState<PostIdea[]>([]);
 
   useEffect(() => {
     if (username) {
@@ -86,11 +102,55 @@ export default function UserProfile() {
 
   const handleCopyPost = async (text: string) => {
     try {
-      await copyToClipboard(text);
+      await navigator.clipboard.writeText(text);
       toast.success("Post copied to clipboard!");
     } catch (error) {
-      toast.error("Failed to copy to clipboard");
+      toast.error("Failed to copy post");
     }
+  };
+
+  const handleTweakPost = (idea: PostIdea) => {
+    setTweakingPost(idea);
+    setTweakFeedback("");
+    setTweakVariations([]);
+    setTweakModalOpen(true);
+  };
+
+  const handleSubmitTweak = async () => {
+    if (!tweakingPost || !tweakFeedback.trim()) {
+      toast.error("Please provide feedback for the post");
+      return;
+    }
+
+    try {
+      setTweaking(true);
+      const response = await apiService.tweakPostIdea({
+        originalText: tweakingPost.text,
+        feedback: tweakFeedback.trim(),
+        username: username
+      });
+
+      setTweakVariations(response.variations);
+      toast.success("Generated 3 improved variations!");
+    } catch (error) {
+      toast.error(`Failed to tweak post: ${error}`);
+    } finally {
+      setTweaking(false);
+    }
+  };
+
+  const handleReplacePost = (variation: PostIdea) => {
+    if (!tweakingPost) return;
+
+    const updatedIdeas = postIdeas.map(idea => (idea === tweakingPost ? variation : idea));
+    setPostIdeas(updatedIdeas);
+    toast.success("Post replaced with improved variation!");
+    setTweakModalOpen(false);
+  };
+
+  const handleAddVariation = (variation: PostIdea) => {
+    setPostIdeas([...postIdeas, variation]);
+    toast.success("Variation added to the list!");
   };
 
   if (loading) {
@@ -351,13 +411,122 @@ export default function UserProfile() {
                   <span className="text-lg font-medium text-gray-900">Generated Ideas ({postIdeas.length})</span>
                 </div>
                 {postIdeas.map((idea, index) => (
-                  <PostIdeaCard key={index} idea={idea} index={index + 1} onCopy={() => handleCopyPost(idea.text)} />
+                  <PostIdeaCard
+                    key={index}
+                    idea={idea}
+                    index={index + 1}
+                    onCopy={() => handleCopyPost(idea.text)}
+                    onTweak={() => handleTweakPost(idea)}
+                  />
                 ))}
               </div>
             )}
           </div>
         </div>
       )}
+
+      {/* Tweak Modal */}
+      <Dialog open={tweakModalOpen} onOpenChange={setTweakModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings className="w-5 h-5" />
+              Tweak Post Idea
+            </DialogTitle>
+            <DialogDescription>
+              Provide feedback to improve this post. The AI will generate 3 enhanced variations based on your input.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* Original Post */}
+            {tweakingPost && (
+              <div>
+                <label className="text-sm font-medium mb-2 block">Original Post</label>
+                <div className="bg-gray-50 border rounded-lg p-4">
+                  <p className="text-gray-900">{tweakingPost.text}</p>
+                  <div className="mt-2 text-sm text-gray-500">
+                    {tweakingPost.text.length}/280 characters
+                    {tweakingPost.community && <span className="ml-2">• Community: {tweakingPost.community}</span>}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Feedback Input */}
+            <div>
+              <label className="text-sm font-medium mb-2 block">Your Feedback</label>
+              <Textarea
+                placeholder="e.g., 'make it more casual', 'add humor', 'focus on benefits', 'make it shorter'..."
+                value={tweakFeedback}
+                onChange={e => setTweakFeedback(e.target.value)}
+                className="resize-none"
+                rows={3}
+              />
+            </div>
+
+            {/* Generate Button */}
+            <Button
+              onClick={handleSubmitTweak}
+              disabled={tweaking || !tweakFeedback.trim()}
+              className="w-full"
+              size="lg"
+            >
+              {tweaking ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Generating Variations...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Generate 3 Improved Variations
+                </>
+              )}
+            </Button>
+
+            {/* Variations */}
+            {tweakVariations.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-purple-600" />
+                  Improved Variations
+                </h3>
+
+                <div className="space-y-4">
+                  {tweakVariations.map((variation, index) => (
+                    <div key={index} className="border rounded-lg p-4 bg-purple-50">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="bg-purple-600 text-white text-sm font-bold px-2 py-1 rounded">
+                              Variation {index + 1}
+                            </span>
+                            <span className="text-sm text-gray-500">{variation.text.length}/280 characters</span>
+                          </div>
+                          <p className="text-gray-900 mb-2">{variation.text}</p>
+                          {variation.reasoning && <p className="text-sm text-gray-600 italic">{variation.reasoning}</p>}
+                        </div>
+                      </div>
+                      <div className="flex gap-2 mt-3">
+                        <Button size="sm" onClick={() => handleReplacePost(variation)} variant="outline">
+                          Replace Original
+                        </Button>
+                        <Button size="sm" onClick={() => handleAddVariation(variation)} variant="outline">
+                          Add to List
+                        </Button>
+                        <Button size="sm" onClick={() => handleCopyPost(variation.text)} variant="outline">
+                          Copy
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
