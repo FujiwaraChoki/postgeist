@@ -22,7 +22,16 @@ export interface Analysis {
   unique_behaviors: string[];
   opportunities: string[];
   tone: string;
-  randomFacts: string[];
+  content_taxonomy?: string[];
+  thematic_analysis?: string[];
+  linguistic_patterns?: string[];
+  engagement_mechanics?: string[];
+  temporal_patterns?: string[];
+  interaction_style?: string[];
+  expertise_demonstration?: string[];
+  content_evolution?: string[];
+  untapped_opportunities?: string[];
+  voice_architecture?: string;
 }
 
 export interface UserData {

@@ -1,6 +1,6 @@
 import * as clack from "@clack/prompts";
 import chalk from "chalk";
-import type { UserData, PostIdea } from "../types";
+import type { UserData, PostIdea, UserDataStats } from "../types";
 
 export class Utils {
   /**
@@ -99,8 +99,8 @@ export class Utils {
       hasAnalysis: !!userData.analysis,
       hasCustomInstructions: !!userData.customInstructions,
       communitiesCount: userData.availableCommunities?.length || 0,
-      hasRandomFacts: !!(userData.analysis?.randomFacts && userData.analysis.randomFacts.length > 0),
-      randomFactsCount: userData.analysis?.randomFacts?.length || 0,
+          hasDetailedAnalysis: !!(userData.analysis?.content_taxonomy && userData.analysis.content_taxonomy.length > 0),
+    analysisCompleteness: userData.analysis ? Object.keys(userData.analysis).length : 0,
     };
   }
 

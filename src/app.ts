@@ -208,7 +208,7 @@ export class PostgeistApp {
       } else if (action === "communities") {
         await this.handleCommunities(userData);
       } else if (action === "facts") {
-        await this.handleRandomFacts(userData);
+        await this.handleAnalysisDetails(userData);
       }
     }
   }
@@ -366,24 +366,24 @@ export class PostgeistApp {
     }
   }
 
-  private async handleRandomFacts(userData: UserData): Promise<void> {
-    if (!userData.analysis?.randomFacts) {
-      DisplayUI.showInfo("No random facts available. Please analyze the user first to generate facts.");
+  private async handleAnalysisDetails(userData: UserData): Promise<void> {
+    if (!userData.analysis) {
+      DisplayUI.showInfo("No analysis available. Please analyze the user first to generate detailed insights.");
       return;
     }
 
     while (true) {
-      const facts = userData.analysis.randomFacts;
-      const action = await PromptsUI.selectFactsAction(facts);
+      const analysis = userData.analysis;
+      const action = await PromptsUI.selectFactsAction(analysis);
 
       if (action === "back") break;
 
       switch (action) {
         case "view":
-          if (facts.length > 0) {
-            DisplayUI.showRandomFacts(facts);
+          if (analysis) {
+            DisplayUI.showDetailedAnalysis(analysis);
           } else {
-            DisplayUI.showInfo("No random facts are currently available.");
+            DisplayUI.showInfo("No analysis is currently available.");
           }
           break;
 
@@ -426,7 +426,7 @@ export class PostgeistApp {
     console.log(chalk.cyan.bold("\n📋 Analyzed Users:"));
     for (const username of users) {
       const userData = await dataService.getUserData(username);
-      const stats = Utils.calculateUserStats(userData);
+      const stats = Utils.generateUserDataStats(userData);
 
       console.log(
         chalk.white(`  @${username}`) +

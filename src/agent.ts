@@ -7,6 +7,7 @@ import { websiteVisit } from "./tools/website-visit";
 import { scraperService } from "./services/scraper";
 import { aiService } from "./services/ai";
 import { dataService } from "./services/data";
+import { DisplayUI } from "./ui/display";
 import chalk from "chalk";
 import ora from "ora";
 
@@ -139,7 +140,10 @@ Remember: You can analyze any public Twitter user and generate content that matc
             engagementPatterns: analysis.engagement_patterns,
             tone: analysis.tone,
             opportunities: analysis.opportunities,
-            randomFacts: analysis.randomFacts.slice(0, 10) // Limit for response size
+            contentTaxonomy: analysis.content_taxonomy?.slice(0, 5) || [],
+            thematicAnalysis: analysis.thematic_analysis?.slice(0, 5) || [],
+            untappedOpportunities: analysis.untapped_opportunities?.slice(0, 5) || [],
+            voiceArchitecture: analysis.voice_architecture || "Not analyzed"
           }
         };
       } catch (error) {
@@ -204,6 +208,9 @@ Remember: You can analyze any public Twitter user and generate content that matc
         const postIdeas = await aiService.generatePostIdeas(userData, Math.min(count, 20));
 
         spinner.succeed(`Generated ${postIdeas.length} post ideas for @${username}`);
+
+        // Display the post ideas beautifully in the terminal
+        DisplayUI.showPostIdeas(postIdeas);
 
         return {
           success: true,

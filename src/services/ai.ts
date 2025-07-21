@@ -43,37 +43,29 @@ export class AIService {
         system: prompts.analyze,
         model: this.model,
         prompt: `
-          Analyze the following posts for @${username} and generate comprehensive insights including random facts about the user.
+          Analyze the following posts for @${username} and generate comprehensive strategic insights for future content creation.
 
           Posts to analyze:
           ${posts.map((post, index) => `${index + 1}. ${post.text}`).join("\n")}
 
-          For randomFacts, generate 15-25 specific facts about this user that can be inferred from their posting patterns and content. These should be personal insights, interests, behaviors, preferences, and characteristics.
-
-          Examples of good random facts:
-          - Lives in Tokyo and often mentions coffee shops
-          - Works in tech, specifically interested in AI/ML
-          - Has a cat named Luna mentioned frequently
-          - Prefers morning posting, usually around 8-9 AM
-          - Often shares programming tips and tutorials
-          - Enjoys hiking and outdoor activities on weekends
-
-          Each fact should be:
-          - Specific and personal to this user
-          - Inferred from their actual content and patterns
-          - Useful for generating authentic posts later
-          - Written in a neutral, factual tone
-          - 3-20 words long
-
           Return the response as a valid JSON object with the following structure:
           {
-            "summary": "A concise summary of the user's activity",
-            "key_themes": ["Key themes and topics the user is interested in"],
-            "engagement_patterns": ["Patterns of engagement the user has"],
-            "unique_behaviors": ["Unique behaviors the user exhibits"],
-            "opportunities": ["Opportunities for growth or improvement"],
-            "tone": "An incredibly detailed analysis of the user's tone and style of posting",
-            "randomFacts": ["15-25 random facts about the user inferred from their posts and behavior"]
+            "summary": "A comprehensive summary of the user's posting strategy and approach",
+            "content_taxonomy": ["Detailed categorization of content types, formats, and structures used"],
+            "thematic_analysis": ["Core themes and importantly, unexplored angles within those themes"],
+            "linguistic_patterns": ["Exact writing style, vocabulary, sentence structures, punctuation, capitalization patterns"],
+            "engagement_mechanics": ["What drives engagement - question types, controversial takes, educational content, personal stories"],
+            "temporal_patterns": ["Post frequency, timing, seasonal content, trending topic adoption patterns"],
+            "interaction_style": ["How they respond to others, collaboration patterns, community engagement"],
+            "expertise_demonstration": ["Areas where they show authority, credibility markers, knowledge sharing methods"],
+            "content_evolution": ["How their content has changed over time, new directions emerging"],
+            "untapped_opportunities": ["Specific content angles, formats, or themes they haven't explored but would fit their brand"],
+            "voice_architecture": "Detailed analysis of the precise construction of their unique voice - tone, formality, personality markers",
+            "key_themes": ["Primary themes and topics the user focuses on"],
+            "engagement_patterns": ["Observable patterns in how they engage with their audience"],
+            "unique_behaviors": ["Distinctive behaviors and approaches that set them apart"],
+            "opportunities": ["Strategic opportunities for content growth and audience expansion"],
+            "tone": "Extremely detailed analysis of their tone, writing style, and voice characteristics"
           }
         `
       });
@@ -135,9 +127,15 @@ export class AIService {
         ? `\n\nAVAILABLE COMMUNITIES:\n${userData.availableCommunities.map(c => `- ${c.name}: ${c.description}`).join('\n')}\n\nFor each post, decide whether it should be posted to one of these communities or no community at all. Only assign a community if the post content directly relates to that community's focus.`
         : '\n\nNo communities available - set community to null for all posts.';
 
-      const randomFactsSection = userData.analysis.randomFacts && userData.analysis.randomFacts.length > 0
-        ? `\n\nRANDOM FACTS ABOUT USER:\n${userData.analysis.randomFacts.map((fact, index) => `${index + 1}. ${fact}`).join('\n')}\n\nUse these facts strategically to add authentic personal touches to posts when they would naturally fit the user's posting style. Only reference facts that would realistically come up in their normal content.`
-        : '';
+      const strategicInsightsSection = `\n\nSTRATEGIC CONTENT INSIGHTS:
+Content Taxonomy: ${userData.analysis.content_taxonomy?.join(", ") || "Not analyzed"}
+Thematic Analysis: ${userData.analysis.thematic_analysis?.join(", ") || "Not analyzed"}
+Linguistic Patterns: ${userData.analysis.linguistic_patterns?.join(", ") || "Not analyzed"}
+Engagement Mechanics: ${userData.analysis.engagement_mechanics?.join(", ") || "Not analyzed"}
+Untapped Opportunities: ${userData.analysis.untapped_opportunities?.join(", ") || "Not analyzed"}
+Voice Architecture: ${userData.analysis.voice_architecture || "Not analyzed"}
+
+Use these insights to generate content that represents a natural EVOLUTION of their voice and explores the untapped opportunities identified in the analysis.`;
 
       const result = await generateText({
         model: this.model,
@@ -145,7 +143,7 @@ export class AIService {
           website_visit: websiteVisit,
           web_search: webSearch,
         },
-        prompt: `You are an expert social media content creator. Generate ${count} authentic Twitter posts that match the user's exact style and voice.
+        prompt: `${prompts.generate.new_post_idea}
 
 ${customInstructionsSection}
 
@@ -156,12 +154,12 @@ Summary: ${userData.analysis.summary}
 Key Themes: ${userData.analysis.key_themes.join(", ")}
 Engagement Patterns: ${userData.analysis.engagement_patterns.join(", ")}
 Tone: ${userData.analysis.tone}
-Random Facts: ${userData.analysis.randomFacts.join(", ")}
 
-EXAMPLE POSTS FROM USER:
+🚨 EXISTING POSTS TO AVOID DUPLICATING:
+(Study these for STYLE ONLY - DO NOT generate similar content)
 ${postsForPrompt}
 
-${randomFactsSection}
+${strategicInsightsSection}
 ${communitiesSection}
 
 REQUIREMENTS (Secondary to custom instructions):

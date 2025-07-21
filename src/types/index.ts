@@ -17,12 +17,21 @@ export interface PostIdea {
 
 export interface Analysis {
   summary: string;
+  content_taxonomy?: string[];
+  thematic_analysis?: string[];
+  linguistic_patterns?: string[];
+  engagement_mechanics?: string[];
+  temporal_patterns?: string[];
+  interaction_style?: string[];
+  expertise_demonstration?: string[];
+  content_evolution?: string[];
+  untapped_opportunities?: string[];
+  voice_architecture?: string;
   key_themes: string[];
   engagement_patterns: string[];
   unique_behaviors: string[];
   opportunities: string[];
   tone: string;
-  randomFacts: string[];
 }
 
 export interface UserData {
@@ -57,4 +66,13 @@ export interface ScraperConfig {
   username?: string;
   password?: string;
   email?: string;
+}
+
+export interface UserDataStats {
+  totalPosts: number;
+  hasAnalysis: boolean;
+  hasCustomInstructions: boolean;
+  communitiesCount: number;
+  hasDetailedAnalysis: boolean;
+  analysisCompleteness: number;
 }

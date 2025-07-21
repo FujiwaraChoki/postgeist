@@ -320,13 +320,9 @@ export class DisplayUI {
       ? chalk.green(`✓ ${userData.availableCommunities.length} communities available`)
       : chalk.gray("✗ No communities set");
 
-    const randomFactsInfo = userData.analysis?.randomFacts && userData.analysis.randomFacts.length > 0
-      ? chalk.green(`✓ ${userData.analysis.randomFacts.length} random facts configured`)
-      : chalk.gray("✗ No random facts set");
-
     const analysisInfo = userData.analysis
-      ? chalk.green("✓ Analysis available")
-      : chalk.gray("✗ Not analyzed");
+      ? chalk.green(`✓ Detailed analysis available`)
+      : chalk.gray("✗ No analysis available");
 
     console.log("\n" + boxen(
       chalk.cyan.bold(`👤 User: @${userData.username}`) + "\n\n" +
@@ -335,7 +331,7 @@ export class DisplayUI {
       chalk.yellow(`• Analysis: ${analysisInfo}`) + "\n" +
       chalk.yellow(`• ${customInstructionsInfo}`) + "\n" +
       chalk.yellow(`• ${communitiesInfo}`) + "\n" +
-      chalk.yellow(`• ${randomFactsInfo}`) + "\n" +
+      chalk.yellow(`• ${analysisInfo}`) + "\n" +
       chalk.gray(`• Last updated: ${new Date(userData.lastUpdated).toLocaleString()}`),
       {
         padding: 1,
@@ -356,8 +352,8 @@ export class DisplayUI {
     }
 
     // Show random facts if they exist
-    if (userData.analysis?.randomFacts && userData.analysis.randomFacts.length > 0) {
-      this.showRandomFacts(userData.analysis.randomFacts);
+    if (userData.analysis) {
+      this.showDetailedAnalysis(userData.analysis);
     }
   }
 
@@ -390,12 +386,26 @@ export class DisplayUI {
     ));
   }
 
-  static showRandomFacts(facts: string[]): void {
+  static showDetailedAnalysis(analysis: any): void {
+    const sections = [];
+
+    if (analysis.content_taxonomy?.length > 0) {
+      sections.push(chalk.cyan.bold("📋 Content Taxonomy:") + "\n" +
+        analysis.content_taxonomy.slice(0, 3).map((item: string) => chalk.gray(`• ${item}`)).join("\n"));
+    }
+
+    if (analysis.untapped_opportunities?.length > 0) {
+      sections.push(chalk.cyan.bold("🚀 Untapped Opportunities:") + "\n" +
+        analysis.untapped_opportunities.slice(0, 3).map((item: string) => chalk.gray(`• ${item}`)).join("\n"));
+    }
+
+    if (analysis.voice_architecture) {
+      sections.push(chalk.cyan.bold("🎭 Voice Architecture:") + "\n" + chalk.gray(analysis.voice_architecture));
+    }
+
     console.log("\n" + boxen(
-      chalk.cyan.bold("🎯 Random Facts") + "\n\n" +
-      facts.map((fact, index) =>
-        chalk.white(`${index + 1}. `) + chalk.gray(fact)
-      ).join("\n"),
+      chalk.cyan.bold("📊 Detailed Analysis") + "\n\n" +
+      (sections.length > 0 ? sections.join("\n\n") : "Analysis data available but not detailed."),
       {
         padding: 1,
         margin: 1,

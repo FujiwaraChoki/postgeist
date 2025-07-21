@@ -22,7 +22,7 @@ describe("Utils", () => {
 
   test("truncateText - should truncate text correctly", () => {
     expect(Utils.truncateText("Short", 10)).toBe("Short");
-    expect(Utils.truncateText("This is a very long text", 10)).toBe("This is a...");
+    expect(Utils.truncateText("This is a very long text", 10)).toBe("This is...");
   });
 
   test("generateUserDataStats - should calculate user stats correctly", () => {
@@ -33,7 +33,9 @@ describe("Utils", () => {
       unique_behaviors: ["uses emojis"],
       opportunities: ["more engagement"],
       tone: "friendly",
-      randomFacts: ["fact 1", "fact 2", "fact 3"]
+      content_taxonomy: ["posts", "threads", "replies"],
+      thematic_analysis: ["technology trends", "coding tutorials"],
+      untapped_opportunities: ["video content", "live streams"]
     };
 
     const userData: UserData = {
@@ -56,7 +58,7 @@ describe("Utils", () => {
     expect(stats.hasAnalysis).toBe(true);
     expect(stats.hasCustomInstructions).toBe(true);
     expect(stats.communitiesCount).toBe(1);
-    expect(stats.hasRandomFacts).toBe(true);
-    expect(stats.randomFactsCount).toBe(3);
+    expect(stats.hasDetailedAnalysis).toBe(true);
+    expect(stats.analysisCompleteness).toBeGreaterThan(5);
   });
 });

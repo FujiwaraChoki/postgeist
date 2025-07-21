@@ -71,8 +71,8 @@ export class PromptsUI {
         },
         {
           value: "facts",
-          label: "🎯 Random Facts",
-          hint: `${userData.analysis?.randomFacts?.length || 0} facts configured`
+                      label: "📊 Analysis Details",
+          hint: `Analysis ${userData.analysis ? 'available' : 'not available'}`
         },
         { value: "back", label: "⬅️  Back to Main Menu", hint: "Return to main menu" }
       ]
@@ -346,13 +346,14 @@ export class PromptsUI {
     return;
   }
 
-  // Random Facts Management
-  static async selectFactsAction(facts: string[]): Promise<FactsActionType> {
+  // Analysis Details Management
+  static async selectFactsAction(analysis: any): Promise<FactsActionType> {
+    const hasDetailedData = analysis?.content_taxonomy?.length > 0 || analysis?.untapped_opportunities?.length > 0;
     return await clack.select({
-      message: "Random Facts Management",
+      message: "Analysis Details Management",
       options: [
-        { value: "view", label: "👀 View Random Facts", hint: `${facts.length} facts available` },
-        { value: "regenerate", label: "🔄 Regenerate Facts", hint: "Re-analyze to generate new facts" },
+        { value: "view", label: "👀 View Analysis Details", hint: hasDetailedData ? "Detailed analysis available" : "Basic analysis available" },
+        { value: "regenerate", label: "🔄 Regenerate Analysis", hint: "Re-analyze to generate fresh insights" },
         { value: "back", label: "⬅️  Back to Settings", hint: "Return to settings menu" }
       ]
     }) as FactsActionType;

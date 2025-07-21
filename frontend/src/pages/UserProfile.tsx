@@ -249,28 +249,28 @@ export default function UserProfile() {
               </div>
             </div>
 
-            {/* Enhanced Random Facts */}
-            {userData.analysis.randomFacts && userData.analysis.randomFacts.length > 0 && (
-              <div className="lg:col-span-2 relative overflow-hidden rounded-xl bg-gradient-to-br from-yellow-50 to-yellow-100/50 border border-yellow-200 shadow-lg hover:shadow-xl transition-all">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-yellow-200/30 to-transparent rounded-bl-full"></div>
+            {/* Enhanced Untapped Opportunities */}
+            {userData.analysis.untapped_opportunities && userData.analysis.untapped_opportunities.length > 0 && (
+              <div className="lg:col-span-2 relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-50 to-purple-100/50 border border-purple-200 shadow-lg hover:shadow-xl transition-all">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-200/30 to-transparent rounded-bl-full"></div>
                 <div className="relative p-6">
                   <div className="flex items-center mb-6">
-                    <div className="p-2 bg-yellow-600 rounded-lg">
+                    <div className="p-2 bg-purple-600 rounded-lg">
                       <Lightbulb className="h-5 w-5 text-white" />
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 ml-3">Random Facts</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 ml-3">Untapped Opportunities</h3>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {userData.analysis.randomFacts.slice(0, 10).map((fact, index) => (
+                  <div className="grid grid-cols-1 gap-4">
+                    {userData.analysis.untapped_opportunities.slice(0, 5).map((opportunity, index) => (
                       <div
                         key={index}
-                        className="bg-white/70 backdrop-blur-sm p-4 rounded-lg border border-yellow-300/50 hover:bg-white hover:shadow-md transition-all"
+                        className="bg-white/70 backdrop-blur-sm p-4 rounded-lg border border-purple-300/50 hover:bg-white hover:shadow-md transition-all"
                       >
                         <div className="flex items-start">
-                          <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center text-white text-xs font-bold mr-3 mt-0.5 flex-shrink-0">
+                          <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold mr-3 mt-0.5 flex-shrink-0">
                             {index + 1}
                           </div>
-                          <span className="text-sm text-gray-700 leading-relaxed">{fact}</span>
+                          <span className="text-sm text-gray-700 leading-relaxed">{opportunity}</span>
                         </div>
                       </div>
                     ))}
