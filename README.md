@@ -4,6 +4,19 @@ AI-Powered Twitter Analysis & Content Generation Tool
 
 Postgeist analyzes Twitter users' posting patterns, writing style, and content themes using AI, then generates authentic post ideas that match their unique voice and style.
 
+## Sponsor
+
+[![Sponsor](https://www.shiori.ai/?ref=github-profile-image)](https://www.shiori.ai/?ref=github-postgeist)
+
+This repo is sponsored by [shiori.ai](https://www.shiori.ai/?ref=github-postgeist), the **best ChatGPT Alternative**, with:
+
+- +15 AI Models
+- Image & Video Generation
+- YouTube & Article Summarization
+- Web Search
+
+> Use Code `GITHUB` for 20% off your first month.
+
 ## Features
 
 ### Core Functionality
